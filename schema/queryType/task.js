@@ -18,7 +18,6 @@ module.exports = gql`
         user: User!
         title: String! 
         status: Boolean!
-        tasks: [Task!]
     }
 
     input createTaskInput {
