@@ -8,9 +8,9 @@ const { createAuthToken, comparePassword, hashPassword } = require('../../servic
 module.exports = {
 
     Query: {
-        users: async (parent, args, context) => {  // for development sake only
-            return await db.select('*').from("public.user");
-        },
+        // users: async (parent, args, context) => {  // for development sake only
+        //     return await db.select('*').from("public.user");
+        // },
         user: combineResolvers(isAuthenticated, async (parent, args, context) => {
             try {
                 const { jwtUser: { email } } = context;

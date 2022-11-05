@@ -6,23 +6,16 @@ const { isAuthenticated, isTaskCreator } = require('./middleware');
 
 module.exports = {
     Query: {
-        tasks: async (parent, args, context) => { // for development sake only
-            try {
-                return await db.select('*').from("public.task");
-            } catch (error) {
-                console.log(error);
-                throw error;
-            }
-        },
-        userTasks: combineResolvers(isAuthenticated, async (parent, args, context) => {
-            try {
-                const { jwtUser: { id } } = context;
-                return await db.select('*').from("public.task").where("fk_user_id", id);
-            } catch (error) {
-                console.log(error);
-                throw error;
-            }
-        }),
+
+        // tasks: async (parent, args, context) => { // for development sake only
+        //     try {
+        //         return await db.select('*').from("public.task");
+        //     } catch (error) {
+        //         console.log(error);
+        //         throw error;
+        //     }
+        // },
+
         task: combineResolvers(isAuthenticated, isTaskCreator, async (parent, args, context) => {
             try {
                 const { id } = args;
@@ -32,6 +25,15 @@ module.exports = {
                 throw error;
             }
         }),
+        userTasks: combineResolvers(isAuthenticated, async (parent, args, context) => {
+            try {
+                const { jwtUser: { id } } = context;
+                return await db.select('*').from("public.task").where("fk_user_id", id);
+            } catch (error) {
+                console.log(error);
+                throw error;
+            }
+        })
     },
     Mutation: {
         createTask: combineResolvers(isAuthenticated, async (parent, args, context) => {
@@ -41,7 +43,6 @@ module.exports = {
                 const newTask = await db("public.task").returning(['id', 'title', 'status', 'fk_user_id']).insert({ title, status, fk_user_id: id });
 
                 if (parentTaskId) {
-                    // const newTaskMap = 
                     await db("public.map_task_tasks").returning(['id', 'fk_parent_task_id', 'fk_sub_task_id']).insert({
                         fk_parent_task_id: parentTaskId,
                         fk_sub_task_id: newTask[0].id
