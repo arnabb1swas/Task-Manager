@@ -15,20 +15,23 @@ module.exports = gql`
 
     type Task {
         id: ID!
-        user: User!
         title: String! 
         status: Boolean!
+        user: User!
+        subTasks: [Task!]
     }
 
     input createTaskInput {
         title: String!
         status: Boolean!
+        parentTaskId: ID
     }
 
     input updateTaskInput {
         id: ID!
         title: String
         status: Boolean
+        parentTaskId: ID
     }
 
     input deleteTaskInput {

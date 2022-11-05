@@ -20,7 +20,7 @@ module.exports.isTaskCreator = async (parent, args, context) => {
     try {
         const { input: { id } } = args;
         const { jwtUser } = context;
-        const task = await db.select('*').from("public.Task").where("id", id).first();
+        const task = await db.select('*').from("public.task").where("id", id).first();
 
         if (!task) {
             throw new Error('Task not Found!');
