@@ -7,7 +7,7 @@ dotEnv.config();
 
 module.exports.createAuthToken = async (data) => {
     try {
-        return jwt.sign(data, process.env.JWT_SECRET_KEY, { expiresIn: '28d' });
+        return jwt.sign(data, process.env.JWT_SECRET_KEY, { expiresIn: '84d' });
     } catch (error) {
         console.log(error);
         throw error;

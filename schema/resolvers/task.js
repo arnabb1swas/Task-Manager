@@ -92,22 +92,32 @@ module.exports = {
         title: (parent, args, context) => parent.title,
         status: (parent, args, context) => parent.status,
         user: async (parent, args, context) => {
-            const { fk_user_id: id } = parent;
-            const { loaders: { batchUser } } = context;
-            return await batchUser.load(id);
+            try {
+                const { fk_user_id: id } = parent;
+                const { loaders: { batchUser } } = context;
+                return await batchUser.load(id);
+            } catch (error) {
+                console.log(error);
+                throw error;
+            }
         },
         subTasks: async (parent, args, context) => {
-            const { id: parentTaskId } = parent;
-            const { loaders: { batchTask } } = context;
-            let tasks = [];
+            try {
+                const { id: parentTaskId } = parent;
+                const { loaders: { batchTask } } = context;
+                let tasks = [];
 
-            const subTaskIds = await db.select('fk_sub_task_id').from("public.map_task_tasks").where("fk_parent_task_id", parentTaskId);
-            if (!_.isEmpty(subTaskIds)) {
-                const taskIds = _.map(subTaskIds, task => task.fk_sub_task_id);
-                tasks = await batchTask.loadMany(taskIds);
+                const subTaskIds = await db.select('fk_sub_task_id').from("public.map_task_tasks").where("fk_parent_task_id", parentTaskId);
+                if (!_.isEmpty(subTaskIds)) {
+                    const taskIds = _.map(subTaskIds, task => task.fk_sub_task_id);
+                    tasks = await batchTask.loadMany(taskIds);
+                }
+
+                return tasks;
+            } catch (error) {
+                console.log(error);
+                throw error;
             }
-
-            return tasks;
         },
     }
 };

@@ -14,7 +14,7 @@ module.exports = gql`
     }
 
     type User {
-        id: ID!
+        id: Int!
         name: String!
         email: String!
         tasks: [Task!]

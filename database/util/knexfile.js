@@ -1,9 +1,6 @@
 const dotEnv = require('dotenv');
 dotEnv.config();
 
-/**
- * @type { Object.<string, import("knex").Knex.Config> }
- */
 module.exports = {
   development: {
     client: 'postgresql',

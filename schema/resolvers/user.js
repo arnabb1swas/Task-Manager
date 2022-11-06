@@ -95,16 +95,21 @@ module.exports = {
         name: (parent, args, context) => parent.name,
         email: (parent, args, context) => parent.email,
         tasks: async (parent, args, context) => {
-            const { id } = parent;
-            const { loaders: { batchTask } } = context;
-            let tasks = [];
-            const userTaskIds = await db.select('id').from("public.task").where("fk_user_id", id);
-            if (!_.isEmpty(userTaskIds)) {
-                const taskIds = _.map(userTaskIds, task => task.id);
-                tasks = await batchTask.loadMany(taskIds);
-            }
+            try {
+                const { id } = parent;
+                const { loaders: { batchTask } } = context;
+                let tasks = [];
+                const userTaskIds = await db.select('id').from("public.task").where("fk_user_id", id);
+                if (!_.isEmpty(userTaskIds)) {
+                    const taskIds = _.map(userTaskIds, task => task.id);
+                    tasks = await batchTask.loadMany(taskIds);
+                }
 
-            return tasks;
+                return tasks;
+            } catch (error) {
+                console.log(error);
+                throw error;
+            }
         },
     }
 };

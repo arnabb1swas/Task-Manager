@@ -4,7 +4,7 @@ module.exports = gql`
     extend type Query {
         tasks: [Task!]
         userTasks: [Task!]
-        task(id: ID!): Task
+        task(id: Int!): Task
     }
 
     extend type Mutation {
@@ -14,7 +14,7 @@ module.exports = gql`
     }
 
     type Task {
-        id: ID!
+        id: Int!
         title: String! 
         status: Boolean!
         user: User!
@@ -24,17 +24,17 @@ module.exports = gql`
     input createTaskInput {
         title: String!
         status: Boolean!
-        parentTaskId: ID
+        parentTaskId: Int
     }
 
     input updateTaskInput {
-        id: ID!
+        id: Int!
         title: String
         status: Boolean
         parentTaskId: ID
     }
 
     input deleteTaskInput {
-        id: ID!
+        id: Int!
     }
 `;
