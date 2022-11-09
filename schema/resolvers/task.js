@@ -2,6 +2,7 @@ const _ = require('lodash');
 const { combineResolvers } = require('graphql-resolvers');
 
 const { db } = require('../../database/util');
+const { encodeToBase64, decodeFromBase64 } = require('../../service/auth');
 const { isAuthenticated, isTaskCreator, isAdmin } = require('./middleware');
 
 module.exports = {
@@ -9,11 +10,73 @@ module.exports = {
     Query: {
         tasks: combineResolvers(isAuthenticated, isAdmin, async (parent, args, context) => {
             try {
-                const tasks = await db.select('*').from("public.task").whereNull('deleted_at');
+                const { filter: { limit, hasDeleted = false, sortBy = 'ASC' }, cursor } = args;
+
+                let query = db.select('*').from("public.task");
+
+                if (!hasDeleted) {
+                    query.whereNull('deleted_at')
+                }
+                if (cursor) {
+                    const operator = sortBy === 'ASC' ? '>=' : '<=';
+                    query.andWhere('id', operator, decodeFromBase64(cursor))
+                }
+                if (limit) {
+                    query.limit(limit + 1)
+                }
+                if (sortBy) {
+                    query.orderBy('id', _.toLower(sortBy))
+                }
+
+                let tasks = await query;
                 if (!tasks) {
                     throw new Error("No Task Found!!");
                 }
-                return tasks;
+
+                const hasNextPage = tasks.length > limit;
+                const nextPageCursor = hasNextPage ? encodeToBase64(tasks[tasks.length - 1].id) : null;
+                tasks = hasNextPage ? tasks.slice(0, -1) : tasks;
+
+                return {
+                    taskFeed: tasks,
+                    pageInfo: { nextPageCursor, hasNextPage }
+                };
+            } catch (error) {
+                console.log(error);
+                throw error;
+            }
+        }),
+        userTasks: combineResolvers(isAuthenticated, async (parent, args, context) => {
+            try {
+                const { jwtUser: { id } } = context;
+                const { filter: { limit, sortBy = 'ASC' }, cursor } = args;
+
+                let query = db.select('*').from("public.task").where("fk_user_id", id).whereNull('deleted_at');
+
+                if (cursor) {
+                    const operator = sortBy === 'ASC' ? '>=' : '<=';
+                    query.andWhere('id', operator, decodeFromBase64(cursor))
+                }
+                if (limit) {
+                    query.limit(limit + 1)
+                }
+                if (sortBy) {
+                    query.orderBy('id', _.toLower(sortBy))
+                }
+
+                let userTasks = await query;
+                if (!userTasks) {
+                    throw new Error("No Task Found!!");
+                }
+
+                const hasNextPage = userTasks.length > limit;
+                const nextPageCursor = hasNextPage ? encodeToBase64(userTasks[userTasks.length - 1].id) : null;
+                userTasks = hasNextPage ? userTasks.slice(0, -1) : userTasks;
+
+                return {
+                    taskFeed: userTasks,
+                    pageInfo: { nextPageCursor, hasNextPage }
+                };
             } catch (error) {
                 console.log(error);
                 throw error;
@@ -29,20 +92,6 @@ module.exports = {
                 throw error;
             }
         }),
-        userTasks: combineResolvers(isAuthenticated, async (parent, args, context) => {
-            try {
-                const { jwtUser: { id } } = context;
-
-                const userTasks = await db.select('*').from("public.task").where("fk_user_id", id).whereNull('deleted_at');
-                if (!userTasks) {
-                    throw new Error("User has No Task!!");
-                }
-                return userTasks;
-            } catch (error) {
-                console.log(error);
-                throw error;
-            }
-        })
     },
 
     Mutation: {

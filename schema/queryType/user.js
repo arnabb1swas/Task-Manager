@@ -2,7 +2,7 @@ const { gql } = require('apollo-server-express');
 
 module.exports = gql`
     extend type Query {
-        users: [User!]
+        users(filter: Filter!, cursor: String): UserFeed!
         user: User
     }
 
@@ -13,16 +13,21 @@ module.exports = gql`
         deleteUser: Boolean!
     }
 
-    enum USER_ROLE_ENUM {
-        USER
-        ADMIN
-    }
-
     type User {
         id: Int!
         name: String!
         email: String!
         tasks: [Task!]
+    }
+
+    type UserFeed {
+        userFeed:  [User!]
+        pageInfo: PageInfo!
+    }
+
+    enum USER_ROLE_ENUM {
+        USER
+        ADMIN
     }
 
     input SignUpInput {

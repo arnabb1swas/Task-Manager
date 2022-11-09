@@ -1,3 +1,4 @@
+const _ = require('lodash');
 const dotEnv = require('dotEnv');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -44,3 +45,7 @@ module.exports.comparePassword = async (userPass, password) => {
         throw error;
     }
 }
+
+module.exports.encodeToBase64 = (data) => new Buffer.from(_.toString(data)).toString("base64");
+
+module.exports.decodeFromBase64 = (data) => new Buffer.from(_.toString(data), "base64").toString("ascii");

@@ -3,18 +3,44 @@ const { combineResolvers } = require('graphql-resolvers');
 
 const { db } = require('../../database/util');
 const { isAuthenticated, isAdmin } = require('./middleware');
-const { createAuthToken, comparePassword, hashPassword } = require('../../service/auth');
+const { createAuthToken, comparePassword, hashPassword, encodeToBase64, decodeFromBase64 } = require('../../service/auth');
 
 module.exports = {
 
     Query: {
         users: combineResolvers(isAuthenticated, isAdmin, async (parent, args, context) => {
             try {
-                const users = await db.select('*').from("public.user").whereNull('deleted_at');
+                const { filter: { limit, hasDeleted = false, sortBy = 'ASC' }, cursor } = args;
+
+                let query = db.select('id', 'name', 'email').from("public.user");
+
+                if (!hasDeleted) {
+                    query.whereNull('deleted_at')
+                }
+                if (cursor) {
+                    const operator = sortBy === 'ASC' ? '>=' : '<=';
+                    query.andWhere('id', operator, decodeFromBase64(cursor))
+                }
+                if (limit) {
+                    query.limit(limit + 1)
+                }
+                if (sortBy) {
+                    query.orderBy('id', _.toLower(sortBy))
+                }
+
+                let users = await query;
                 if (!users) {
                     throw new Error('User not found!');
                 }
-                return users;
+
+                const hasNextPage = users.length > limit;
+                const nextPageCursor = hasNextPage ? encodeToBase64(users[users.length - 1].id) : null;
+                users = hasNextPage ? users.slice(0, -1) : users;
+
+                return {
+                    userFeed: users,
+                    pageInfo: { nextPageCursor, hasNextPage }
+                };
             } catch (error) {
                 console.log(error);
                 throw error;
