@@ -4,37 +4,43 @@ module.exports = gql`
     extend type Query {
         tasks: [Task!]
         userTasks: [Task!]
-        task(id: Int!): Task
+        task(id: Int!): Task!
     }
 
     extend type Mutation {
-        createTask(input: createTaskInput!): Task
-        updateTask(input: updateTaskInput!): Task!
-        deleteTask(input: deleteTaskInput!): Boolean!
+        createTask(input: CreateTaskInput!): Task!
+        updateTask(input: UpdateTaskInput!): Task!
+        deleteTask(input: DeleteTaskInput!): Task!
+    }
+
+    enum TASK_STATUS_ENUM {
+        TODO
+        IN_PROGRESS
+        COMPLETED
     }
 
     type Task {
         id: Int!
         title: String! 
-        status: Boolean!
+        taskStatus: TASK_STATUS_ENUM!
         user: User!
         subTasks: [Task!]
     }
 
-    input createTaskInput {
+    input CreateTaskInput {
         title: String!
-        status: Boolean!
+        taskStatus: TASK_STATUS_ENUM!
         parentTaskId: Int
     }
 
-    input updateTaskInput {
+    input UpdateTaskInput {
         id: Int!
         title: String
-        status: Boolean
+        taskStatus: TASK_STATUS_ENUM
         parentTaskId: ID
     }
 
-    input deleteTaskInput {
+    input DeleteTaskInput {
         id: Int!
     }
 `;

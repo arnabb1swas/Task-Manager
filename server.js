@@ -1,12 +1,11 @@
 const cors = require('cors');
 const dotEnv = require('dotenv');
 const express = require('express');
-const DataLoader = require('dataloader');
 const { ApolloServer } = require('apollo-server-express');
 
 const typeDefs = require('./schema/queryType');
-const resolvers = require('./schema/resolvers');
 const loaders = require('./schema/dataloaders');
+const resolvers = require('./schema/resolvers');
 const { verifyUserAuth } = require('./service/auth');
 
 // set env variables
@@ -25,13 +24,7 @@ const apolloServer = new ApolloServer({
     resolvers,
     context: async ({ req }) => {
         const jwtUser = await verifyUserAuth(req);
-        return {
-            jwtUser: jwtUser,
-            loaders: {
-                batchUser: new DataLoader((keys) => loaders.user.batchUsers(keys)),
-                batchTask: new DataLoader((keys) => loaders.task.batchTasks(keys)),
-            }
-        }
+        return { jwtUser, loaders }
     }
 });
 
@@ -39,8 +32,8 @@ apolloServer.applyMiddleware({ app, path: '/graphql' });
 
 const PORT = process.env.PORT || 4000;
 
-app.use('/', (req, res, next) => {
-    res.send({ message: `Go to http://localhost:${PORT}${apolloServer.graphqlPath}` });
+app.use('/', (req, res) => {
+    res.send(`<form action="http://localhost:${PORT}${apolloServer.graphqlPath}"><input type="submit" value="GraphQL" style="width:100px" /></form>`);
 });
 
 app.listen(PORT, () => {

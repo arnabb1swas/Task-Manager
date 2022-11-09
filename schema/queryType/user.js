@@ -1,16 +1,21 @@
 const { gql } = require('apollo-server-express');
 
 module.exports = gql`
-   extend type Query {
+    extend type Query {
         users: [User!]
         user: User
     }
 
-   extend type Mutation {
-        signUp(input: signUpInput!): User!
-        logIn(input: loginInput!): Token!
-        updateUser(input: updateUserInput!): User!
+    extend type Mutation {
+        signUp(input: SignUpInput!): UserToken!
+        logIn(input: LoginInput!): UserToken!
+        updateUser(input: UpdateUserInput!): User!
         deleteUser: Boolean!
+    }
+
+    enum USER_ROLE_ENUM {
+        USER
+        ADMIN
     }
 
     type User {
@@ -20,24 +25,27 @@ module.exports = gql`
         tasks: [Task!]
     }
 
-    input signUpInput {
+    input SignUpInput {
         name: String!
         email: String!
         password: String!
+        role: USER_ROLE_ENUM!
     }
 
-    input loginInput {
+    input LoginInput {
         email: String!
         password: String!
     }
 
-    type Token {
+    type UserToken {
+        user: User!
         token: String!
     }
 
-    input updateUserInput {
+    input UpdateUserInput {
         name: String
         email: String
         password: String
+        # role: USER_ROLE_ENUM
     }
 `;
