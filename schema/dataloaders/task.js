@@ -1,10 +1,12 @@
 const _ = require('lodash');
-const { db } = require('../../database/util');
+
+const { getBatchTasks, getBatchSubTasksId, getBatchUserTasksId } = require('../../database/models/task');
 
 module.exports.batchTasks = async (keys) => {
     try {
         keys = keys.map(Number);
-        const tasks = await db("public.task").select("*").whereIn("id", keys).whereNull('deleted_at');
+        const tasks = await getBatchTasks({ keys });
+
         return keys.map(key => tasks.find(task => task.id === key));
     } catch (error) {
         console.log(error);
@@ -15,7 +17,7 @@ module.exports.batchTasks = async (keys) => {
 module.exports.batchSubTasksId = async (keys) => {
     try {
         keys = keys.map(Number);
-        const userTasksId = await db("public.map_parent_sub_task").select("*").whereIn("fk_parent_task_id", keys).whereNull('deleted_at');
+        const userTasksId = await getBatchSubTasksId({ keys });
         return keys.map(key => userTasksId.find(task => task.fk_parent_task_id === key));
     } catch (error) {
         console.log(error);
@@ -26,9 +28,14 @@ module.exports.batchSubTasksId = async (keys) => {
 module.exports.batchUserTasksId = async (keys) => {
     try {
         keys = keys.map(Number);
-        const userTasksId = await db("public.task").select("id", "fk_user_id").whereIn("fk_user_id", keys).whereNull('deleted_at');
+        const userTasksId = await getBatchUserTasksId({ keys });
         const group = _.groupBy(userTasksId, user => user.fk_user_id);
-        return _.map(keys, key => group[key]);
+        return keys.map(key => {
+            if (group[key]) {
+                return group[key];
+            }
+            return [];
+        });
     } catch (error) {
         console.log(error);
         throw error;

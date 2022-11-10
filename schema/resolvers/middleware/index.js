@@ -1,18 +1,17 @@
-const _ = require('lodash');
 const { skip } = require('graphql-resolvers');
 
-const { db } = require('../../../database/util');
+const { getUserById, getTaskById } = require('../../../database/models');
 
 module.exports.isAuthenticated = async (parent, args, context) => {
     try {
         const { jwtUser } = context;
         if (!jwtUser || !jwtUser.id) {
-            throw new Error('Access denied! Please Login to continue.');
+            throw new Error('ACCESS DENIED! LOGIN TO CONTINUE');
         }
 
-        const user = await db.select('*').from("public.user").where("id", jwtUser.id).whereNull('deleted_at').first();
+        const user = await getUserById({ id: jwtUser.id });
         if (!user) {
-            throw new Error("User doesn't Exist!!");
+            throw new Error("USER NOT FOUND");
         }
 
         return skip;
@@ -26,7 +25,7 @@ module.exports.isAdmin = (parent, args, context) => {
     try {
         const { jwtUser: { role } } = context;
         if (role !== 'ADMIN') {
-            throw new Error('User is not Admin!!');
+            throw new Error('USER IS NOT AN ADMIN');
         }
 
         return skip;
@@ -40,12 +39,12 @@ module.exports.isTaskCreator = async (parent, args, context) => {
     try {
         const { input: { id } } = args;
         const { jwtUser } = context;
-        const task = await db.select('*').from("public.task").where("id", id).whereNull('deleted_at').first();
+        const task = await getTaskById({ id });
 
         if (!task) {
-            throw new Error('Task not Found!');
+            throw new Error('TASK NOT FOUND');
         } else if (jwtUser.id !== task.fk_user_id) {
-            throw new Error('Unauthorized Task Creator!');
+            throw new Error('UNAUTHORIZED TASK CREATOR');
         }
 
         return skip;

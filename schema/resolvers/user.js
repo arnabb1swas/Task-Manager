@@ -1,9 +1,17 @@
 const _ = require('lodash');
 const { combineResolvers } = require('graphql-resolvers');
 
-const { db } = require('../../database/util');
 const { isAuthenticated, isAdmin } = require('./middleware');
-const { createAuthToken, comparePassword, hashPassword, encodeToBase64, decodeFromBase64 } = require('../../service/auth');
+const { createAuthToken, comparePassword, hashPassword, getPageInfo } = require('../../service/auth');
+const {
+    addUser,
+    editUser,
+    getUsers,
+    removeUser,
+    getUserById,
+    getUserByEmail,
+    getLoginUserDetails,
+} = require('../../database/models');
 
 module.exports = {
 
@@ -12,35 +20,14 @@ module.exports = {
             try {
                 const { filter: { limit, hasDeleted = false, sortBy = 'ASC' }, cursor } = args;
 
-                let query = db.select('id', 'name', 'email').from("public.user");
-
-                if (!hasDeleted) {
-                    query.whereNull('deleted_at')
-                }
-                if (cursor) {
-                    const operator = sortBy === 'ASC' ? '>=' : '<=';
-                    query.andWhere('id', operator, decodeFromBase64(cursor))
-                }
-                if (limit) {
-                    query.limit(limit + 1)
-                }
-                if (sortBy) {
-                    query.orderBy('id', _.toLower(sortBy))
-                }
-
-                let users = await query;
+                let users = await getUsers({ limit, hasDeleted, sortBy, cursor });
                 if (!users) {
-                    throw new Error('User not found!');
+                    throw new Error("USER NOT FOUND");
                 }
 
-                const hasNextPage = users.length > limit;
-                const nextPageCursor = hasNextPage ? encodeToBase64(users[users.length - 1].id) : null;
-                users = hasNextPage ? users.slice(0, -1) : users;
+                const pageInfo = await getPageInfo({ obj: users, limit });
 
-                return {
-                    userFeed: users,
-                    pageInfo: { nextPageCursor, hasNextPage }
-                };
+                return { userFeed: users, pageInfo };
             } catch (error) {
                 console.log(error);
                 throw error;
@@ -49,10 +36,12 @@ module.exports = {
         user: combineResolvers(isAuthenticated, async (parent, args, context) => {
             try {
                 const { jwtUser: { id } } = context;
-                const user = await db.select('*').from("public.user").where("id", id).whereNull('deleted_at').first();
+
+                const user = await getUserById({ id });
                 if (!user) {
-                    throw new Error('User not found!');
+                    throw new Error("USER NOT FOUND");
                 }
+
                 return user;
             } catch (error) {
                 console.log(error);
@@ -65,15 +54,17 @@ module.exports = {
         signUp: async (parent, args, context) => {
             try {
                 const { input: { name, email, password, role } } = args;
-                const user = await db.select('*').from("public.user").where("email", email).whereNull('deleted_at').first();
-                if (user) {
-                    throw new Error('Email already in use!!');
-                }
-                const hashedPassword = await hashPassword(password);
-                const returnedData = await db("public.user").returning(['id', 'name', 'email', 'role']).insert({ name, email, password: hashedPassword, role });
-                const token = await createAuthToken({ id: returnedData[0].id, role: returnedData[0].role });
 
-                return { token, user: returnedData[0] };
+                const user = await getUserByEmail({ email });
+                if (user) {
+                    throw new Error("EMAIL ALREADY EXIST");
+                }
+
+                const hashedPassword = await hashPassword(password);
+                const newUser = await addUser({ name, email, password: hashedPassword, role });
+                const token = await createAuthToken({ id: newUser.id, role: newUser.role });
+
+                return { token, user: newUser };
             } catch (error) {
                 console.log(error);
                 throw error;
@@ -82,17 +73,21 @@ module.exports = {
         logIn: async (parent, args, context) => {
             try {
                 const { input: { email, password } } = args;
-                const user = await db.select('*').from("public.user").where("email", email).whereNull('deleted_at').first();
+
+                const user = await getLoginUserDetails({ email });
+
                 if (!user) {
-                    throw new Error("User doesn't exist!!");
+                    throw new Error("USER NOT FOUND");
                 }
 
                 const validPassword = await comparePassword(user.password, password);
+
                 if (!validPassword) {
-                    throw new Error("Incorrect Password!!");
+                    throw new Error("INCORRECT PASSWORD");
                 }
 
                 const token = await createAuthToken({ id: user.id, role: user.role });
+
                 return { token, user };
             } catch (error) {
                 console.log(error);
@@ -103,19 +98,10 @@ module.exports = {
             try {
                 const { input: { name, email, password } } = args;
                 const { jwtUser: { id } } = context;
-                const updateUserInput = {};
-                if (name) {
-                    updateUserInput['name'] = name;
-                }
-                if (email) {
-                    updateUserInput['email'] = email;
-                }
-                if (password) {
-                    updateUserInput['password'] = await hashPassword(password);
-                }
 
-                const updatedUser = await db('public.user').where({ 'id': id }).update(updateUserInput, ['id', 'name', 'email']);
-                return updatedUser[0];
+                const updatedUser = await editUser({ id, name, email, password });
+
+                return updatedUser;
             } catch (error) {
                 console.log(error);
                 throw error;
@@ -124,17 +110,9 @@ module.exports = {
         deleteUser: combineResolvers(isAuthenticated, async (parent, args, context) => {
             try {
                 const { jwtUser: { id } } = context;
-                const deleted_at = new Date(Date.now()).toISOString();
-                const deletedUser = await db('public.user').where({ 'id': id }).update({ deleted_at }, ['id', 'name', 'email', 'deleted_at']);
-                if (_.isNull(deletedUser[0].deleted_at)) {
-                    return false;
-                }
+                const deletedUser = await removeUser({ id });
 
-                const tasksId = await db('public.task').where({ 'fk_user_id': id }).update({ deleted_at }, ['id']);
-                const taskIds = _.map(tasksId, task => task.id);
-                await db('public.map_parent_sub_task').whereIn('fk_sub_task_id', taskIds).orWhereIn('fk_parent_task_id', taskIds).update({ deleted_at }, ['id']);
-
-                return true;
+                return deletedUser;
             } catch (error) {
                 console.log(error);
                 throw error;

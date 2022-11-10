@@ -1,4 +1,3 @@
-const _ = require('lodash');
 const dotEnv = require('dotEnv');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -46,6 +45,30 @@ module.exports.comparePassword = async (userPass, password) => {
     }
 }
 
-module.exports.encodeToBase64 = (data) => new Buffer.from(_.toString(data)).toString("base64");
+module.exports.decodeFromBase64 = async (data) => {
+    try {
+        return new Buffer.from(data.toString(), "base64").toString("ascii");
+    } catch (error) {
+        console.log(error);
+        throw error;
+    }
+};
 
-module.exports.decodeFromBase64 = (data) => new Buffer.from(_.toString(data), "base64").toString("ascii");
+const encodeToBase64 = async (data) => {
+    try {
+        return new Buffer.from(data.toString()).toString("base64");
+    } catch (error) {
+        console.log(error);
+        throw error;
+    }
+};
+
+module.exports.getPageInfo = async (data) => {
+    let { obj, limit } = data;
+
+    const hasNextPage = obj.length > limit;
+    const nextPageCursor = hasNextPage ? encodeToBase64(obj[obj.length - 1].id) : null;
+    obj = hasNextPage ? obj.slice(0, -1) : obj;
+
+    return { hasNextPage, nextPageCursor };
+};
