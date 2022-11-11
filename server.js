@@ -1,12 +1,14 @@
 const cors = require('cors');
 const dotEnv = require('dotenv');
 const express = require('express');
-const { ApolloServer } = require('apollo-server-express');
+const { applyMiddleware } = require('graphql-middleware');
+const { ApolloServer, makeExecutableSchema } = require('apollo-server-express');
 
 const typeDefs = require('./schema/queryType');
 const loaders = require('./schema/dataloaders');
 const resolvers = require('./schema/resolvers');
 const { verifyUserAuth } = require('./service/auth');
+const { permissions } = require('./service/permissions');
 
 // set env variables
 dotEnv.config();
@@ -19,9 +21,11 @@ app.use(cors());
 // body parser middleware
 app.use(express.json());
 
+const schema = makeExecutableSchema({ typeDefs, resolvers });
+const schemaWithPermissions = applyMiddleware(schema, permissions);
+
 const apolloServer = new ApolloServer({
-    typeDefs,
-    resolvers,
+    schema: schemaWithPermissions,
     context: async ({ req }) => {
         const jwtUser = await verifyUserAuth(req);
         return { jwtUser, loaders }

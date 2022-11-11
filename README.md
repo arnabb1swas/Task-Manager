@@ -6,4 +6,4 @@ To-Do
 - [x] Refactor the Code using dataloaders and improving the schema as per requirements.
 - [x] Adding Paginations.
 - [x] Seperating Query from Controller.
-- [ ] Using Graphql-Shield.
+- [x] Using Graphql-Shield.

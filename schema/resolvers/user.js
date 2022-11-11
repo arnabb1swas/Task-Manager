@@ -1,7 +1,5 @@
 const _ = require('lodash');
-const { combineResolvers } = require('graphql-resolvers');
 
-const { isAuthenticated, isAdmin } = require('./middleware');
 const { createAuthToken, comparePassword, hashPassword, getPageInfo } = require('../../service/auth');
 const {
     addUser,
@@ -14,9 +12,8 @@ const {
 } = require('../../database/models');
 
 module.exports = {
-
     Query: {
-        users: combineResolvers(isAuthenticated, isAdmin, async (parent, args, context) => {
+        users: async (parent, args, context) => {
             try {
                 const { filter: { limit, hasDeleted = false, sortBy = 'ASC' }, cursor } = args;
 
@@ -32,8 +29,8 @@ module.exports = {
                 console.log(error);
                 throw error;
             }
-        }),
-        user: combineResolvers(isAuthenticated, async (parent, args, context) => {
+        },
+        user: async (parent, args, context) => {
             try {
                 const { jwtUser: { id } } = context;
 
@@ -47,7 +44,7 @@ module.exports = {
                 console.log(error);
                 throw error;
             }
-        }),
+        },
     },
 
     Mutation: {
@@ -94,7 +91,7 @@ module.exports = {
                 throw error;
             }
         },
-        updateUser: combineResolvers(isAuthenticated, async (parent, args, context) => {
+        updateUser: async (parent, args, context) => {
             try {
                 const { input: { name, email, password } } = args;
                 const { jwtUser: { id } } = context;
@@ -106,8 +103,8 @@ module.exports = {
                 console.log(error);
                 throw error;
             }
-        }),
-        deleteUser: combineResolvers(isAuthenticated, async (parent, args, context) => {
+        },
+        deleteUser: async (parent, args, context) => {
             try {
                 const { jwtUser: { id } } = context;
                 const deletedUser = await removeUser({ id });
@@ -117,7 +114,7 @@ module.exports = {
                 console.log(error);
                 throw error;
             }
-        }),
+        },
     },
 
     User: {

@@ -1,8 +1,6 @@
 const _ = require('lodash');
-const { combineResolvers } = require('graphql-resolvers');
 
 const { getPageInfo } = require('../../service/auth');
-const { isAuthenticated, isTaskCreator, isAdmin } = require('./middleware');
 const {
     getTaskById,
     addTask,
@@ -18,7 +16,7 @@ const {
 module.exports = {
 
     Query: {
-        tasks: combineResolvers(isAuthenticated, isAdmin, async (parent, args, context) => {
+        tasks: async (parent, args, context) => {
             try {
                 const { filter: { limit, hasDeleted = false, sortBy = 'ASC' }, cursor } = args;
 
@@ -35,8 +33,8 @@ module.exports = {
                 console.log(error);
                 throw error;
             }
-        }),
-        userTasks: combineResolvers(isAuthenticated, async (parent, args, context) => {
+        },
+        userTasks: async (parent, args, context) => {
             try {
                 const { jwtUser: { id } } = context;
                 const { filter: { limit, sortBy = 'ASC' }, cursor } = args;
@@ -54,8 +52,8 @@ module.exports = {
                 console.log(error);
                 throw error;
             }
-        }),
-        task: combineResolvers(isAuthenticated, isTaskCreator, async (parent, args, context) => {
+        },
+        task: async (parent, args, context) => {
             try {
                 const { id } = args;
                 const task = await getTaskById({ id });
@@ -64,11 +62,11 @@ module.exports = {
                 console.log(error);
                 throw error;
             }
-        }),
+        },
     },
 
     Mutation: {
-        createTask: combineResolvers(isAuthenticated, async (parent, args, context) => {
+        createTask: async (parent, args, context) => {
             try {
                 const { jwtUser: { id } } = context;
                 const { input: { title, taskStatus, parentTaskId } } = args;
@@ -84,9 +82,8 @@ module.exports = {
                 console.log(error);
                 throw error;
             }
-        }),
-
-        updateTask: combineResolvers(isAuthenticated, isTaskCreator, async (parent, args, context) => {
+        },
+        updateTask: async (parent, args, context) => {
             try {
                 const { input: { id, title, taskStatus, parentTaskId } } = args;
 
@@ -101,9 +98,8 @@ module.exports = {
                 console.log(error);
                 throw error;
             }
-        }),
-
-        deleteTask: combineResolvers(isAuthenticated, isTaskCreator, async (parent, args, context) => {
+        },
+        deleteTask: async (parent, args, context) => {
             try {
                 const { input: { id } } = args;
                 const deletedTask = await removeTask({ id });
@@ -113,7 +109,7 @@ module.exports = {
                 console.log(error);
                 throw error;
             }
-        }),
+        },
     },
 
     Task: {
