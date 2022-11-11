@@ -22,7 +22,8 @@
     "jsonwebtoken": "^8.5.1",
     "knex": "^2.3.0",
     "lodash": "^4.17.21",
-    "pg": "^8.8.0"
+    "pg": "^8.8.0",
+    "validator": "^13.7.0"
   },
   "devDependencies": {
     "nodemon": "^2.0.20"

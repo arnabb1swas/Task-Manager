@@ -1,4 +1,5 @@
 const _ = require('lodash');
+const validator = require('validator');
 
 const { createAuthToken, comparePassword, hashPassword, getPageInfo } = require('../../service/auth');
 const {
@@ -95,6 +96,12 @@ module.exports = {
             try {
                 const { input: { name, email, password } } = args;
                 const { jwtUser: { id } } = context;
+                if (email) {
+                    const isValidEmail = validator.isEmail(email);
+                    if (!isValidEmail) {
+                        return new Error("INVALID EMAIL");
+                    }
+                }
 
                 const updatedUser = await editUser({ id, name, email, password });
 

@@ -1,6 +1,6 @@
 const { shield, and } = require('graphql-shield');
 
-const { isAuthenticated, isAdmin, isTaskCreator } = require('./rules');
+const { isAuthenticated, isAdmin, isTaskCreator, isValidEmail } = require('./rules');
 
 module.exports.permissions = shield({
     Query: {
@@ -16,9 +16,10 @@ module.exports.permissions = shield({
 
     Mutation: {
         /*  User Permissions */
+        signUp: isValidEmail,
+        logIn: isValidEmail,
         updateUser: isAuthenticated,
         deleteUser: isAuthenticated,
-
 
         /*  Task Permissions */
         createTask: isAuthenticated,
