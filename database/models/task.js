@@ -4,15 +4,18 @@ const { decodeFromBase64 } = require('../../service/auth');
 
 module.exports.getTasks = async (data) => {
     try {
-        const { limit, hasDeleted, sortBy, cursor } = data;
+        const { searchText, limit, hasDeleted, sortBy, cursor } = data;
         let query = db.select('*').from("public.task");
 
         if (!hasDeleted) {
             query.whereNull('deleted_at')
         }
+        if (searchText) {
+            query.andWhereILike('title', `%${searchText}%`)
+        }
         if (cursor) {
             const operator = sortBy === 'ASC' ? '>=' : '<=';
-            query.andWhere('id', operator, decodeFromBase64(cursor))
+            query.andWhere('id', operator, await decodeFromBase64(cursor))
         }
         if (limit) {
             query.limit(limit + 1)
@@ -30,12 +33,15 @@ module.exports.getTasks = async (data) => {
 
 module.exports.getUserTasks = async (data) => {
     try {
-        const { id, limit, sortBy, cursor } = data;
+        const { id, searchText, limit, sortBy, cursor } = data;
         let query = db.select('*').from("public.task").where("fk_user_id", id).whereNull('deleted_at');
 
+        if (searchText) {
+            query.andWhereILike('title', `%${searchText}%`)
+        }
         if (cursor) {
             const operator = sortBy === 'ASC' ? '>=' : '<=';
-            query.andWhere('id', operator, decodeFromBase64(cursor))
+            query.andWhere('id', operator, await decodeFromBase64(cursor))
         }
         if (limit) {
             query.limit(limit + 1)

@@ -7,3 +7,4 @@ To-Do
 - [x] Adding Paginations.
 - [x] Seperating Query from Controller.
 - [x] Using Graphql-Shield.
+- [x] Adding Text Search in Filters with Pagination.

@@ -67,8 +67,8 @@ module.exports.getPageInfo = async (data) => {
     let { obj, limit } = data;
 
     const hasNextPage = obj.length > limit;
-    const nextPageCursor = hasNextPage ? encodeToBase64(obj[obj.length - 1].id) : null;
+    const nextPageCursor = hasNextPage ? await encodeToBase64(obj[obj.length - 1].id) : null;
     obj = hasNextPage ? obj.slice(0, -1) : obj;
 
-    return { hasNextPage, nextPageCursor };
+    return { objArr: obj, pageInfo: { hasNextPage, nextPageCursor } };
 };

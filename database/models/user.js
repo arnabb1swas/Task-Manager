@@ -6,15 +6,19 @@ const { hashPassword, decodeFromBase64 } = require('../../service/auth');
 
 module.exports.getUsers = async (data) => {
     try {
-        const { limit, hasDeleted, sortBy, cursor } = data;
+        const { searchText, limit, hasDeleted, sortBy, cursor } = data;
         let query = db.select('id', 'name', 'email').from("public.user");
 
         if (!hasDeleted) {
             query.whereNull('deleted_at')
         }
+        if (searchText) {
+            query.andWhereRaw(`(name ILIKE '%${searchText}%' OR email ILIKE '%${searchText}%')`)
+        }
         if (cursor) {
             const operator = sortBy === 'ASC' ? '>=' : '<=';
-            query.andWhere('id', operator, decodeFromBase64(cursor))
+            const decodedCursor = await decodeFromBase64(cursor);
+            query.andWhere('id', operator, decodedCursor);
         }
         if (limit) {
             query.limit(limit + 1)

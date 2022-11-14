@@ -18,17 +18,16 @@ module.exports = {
     Query: {
         tasks: async (parent, args, context) => {
             try {
-                const { filter: { limit, hasDeleted = false, sortBy = 'ASC' }, cursor } = args;
+                const { filter: { searchText, limit, hasDeleted = false, sortBy = 'ASC' }, cursor } = args;
 
-                let tasks = await getTasks({ limit, hasDeleted, sortBy, cursor });
+                const tasks = await getTasks({ searchText, limit, hasDeleted, sortBy, cursor });
 
                 if (!tasks) {
                     throw new Error("TASK NOT FOUND");
                 }
 
-                const pageInfo = await getPageInfo({ obj: tasks, limit });
-
-                return { taskFeed: tasks, pageInfo };
+                const { objArr, pageInfo } = await getPageInfo({ obj: tasks, limit });
+                return { taskFeed: objArr, pageInfo };
             } catch (error) {
                 console.log(error);
                 throw error;
@@ -37,17 +36,16 @@ module.exports = {
         userTasks: async (parent, args, context) => {
             try {
                 const { jwtUser: { id } } = context;
-                const { filter: { limit, sortBy = 'ASC' }, cursor } = args;
+                const { filter: { searchText, limit, sortBy = 'ASC' }, cursor } = args;
 
-                let userTasks = await getUserTasks({ id, limit, sortBy, cursor });
-
+                let userTasks = await getUserTasks({ id, searchText, limit, sortBy, cursor });
                 if (!userTasks) {
                     throw new Error("TASK NOT FOUND");
                 }
 
-                const pageInfo = await getPageInfo({ obj: userTasks, limit });
+                const { objArr, pageInfo } = await getPageInfo({ obj: userTasks, limit });
 
-                return { taskFeed: userTasks, pageInfo };
+                return { taskFeed: objArr, pageInfo };
             } catch (error) {
                 console.log(error);
                 throw error;

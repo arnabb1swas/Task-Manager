@@ -18,6 +18,7 @@ const typeDefs = gql`
     }
 
     input Filter {
+        searchText: String
         limit: Int
         hasDeleted: Boolean!
         sortBy: SORT_BY_ENUM!

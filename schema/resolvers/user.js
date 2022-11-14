@@ -16,16 +16,16 @@ module.exports = {
     Query: {
         users: async (parent, args, context) => {
             try {
-                const { filter: { limit, hasDeleted = false, sortBy = 'ASC' }, cursor } = args;
+                const { filter: { searchText, limit, hasDeleted = false, sortBy = 'ASC' }, cursor } = args;
 
-                let users = await getUsers({ limit, hasDeleted, sortBy, cursor });
+                const users = await getUsers({ searchText, limit, hasDeleted, sortBy, cursor });
                 if (!users) {
                     throw new Error("USER NOT FOUND");
                 }
 
-                const pageInfo = await getPageInfo({ obj: users, limit });
+                const { objArr, pageInfo } = await getPageInfo({ obj: users, limit });
 
-                return { userFeed: users, pageInfo };
+                return { userFeed: objArr, pageInfo };
             } catch (error) {
                 console.log(error);
                 throw error;
